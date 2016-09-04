@@ -1,0 +1,1 @@
+The demo rover consists of a LEGO chassis with Mindstorms EV3 brick being responsible for receiving RC commands from a PlayStation 3 &copy; Dualshock 3 &copy; controller, Arduino Uno for additional ultrasonic range-finders and Raspberry Pi B+ for First-Person View: video-streaming and photo capture on demand.
