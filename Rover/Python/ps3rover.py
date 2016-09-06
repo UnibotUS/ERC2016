@@ -4,8 +4,7 @@ import ev3dev.ev3 as ev3
 import threading
 import time
 import rpyc
-#RPyC connection with RaspberryPi through USB
-raspi = rpyc.classic.connect("192.168.0.1")
+
 ## Some helpers ##
 def clamp(n, (minn, maxn)):
     return max(min(maxn, n), minn)
@@ -14,7 +13,7 @@ def scale(val, src, dst):
     return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
 def scale_stick(value):
-    return scale(value,(0,255),(-100,100))
+    return scale(value,(0,255),(100,-100))
 
 def dc_clamp(value):
     return clamp(value, (-100,100))
@@ -29,12 +28,18 @@ for device in devices:
         ps3dev = device.fn
         print "Dualshock3 found!"
         ev3.Sound.play("/home/robot/wav/071-ready.wav").wait()
-        
+        break
 gamepad = evdev.InputDevice(ps3dev)
 #forward speed set with left joystick's Y-axis movement 
 forward_speed = 0
 #sideways speed set with left joystick's X-axis movement
 side_speed = 0
+try:
+#RPyC connection with RaspberryPi through USB
+	raspi = rpyc.classic.connect("192.168.0.2")
+except:
+	raspi=None
+	ev3.Sound.play("/home/robot/wav/100-warning.wav").wait()
 running = True
 #Setting motor speeds is done in a separate thread defined below
 class MotorThread(threading.Thread):
@@ -70,8 +75,11 @@ for event in gamepad.read_loop():   #this loops infinitely
     if event.type == 1 and event.code == 301 and event.value == 1:
         #O button runs a Python script on the RaspberryPi via RPyC to take a still photo with the PiCamera
 		print "O button pressed. Taking snapshot with RaspberryPi camera"
-        raspi.modules.os.system('python /home/pi/scripts/picamsnap.py')
-        ev3.Sound.play("/home/robot/wav/071-ready.wav").wait()     
+        if raspi is not None:
+			raspi.modules.os.system('python /home/pi/scripts/picamsnap.py')
+			ev3.Sound.play("/home/robot/wav/071-ready.wav").wait()
+		else:
+			ev3.Sound.play("/home/robot/wav/100-warning.wav").wait()
     if event.type == 1 and event.code == 302 and event.value == 1:
         #X button exits the gamepad's event-reading loop and therefore the program itself
 		print "X button is pressed. Stopping."
